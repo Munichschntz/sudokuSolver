@@ -1,0 +1,202 @@
+:root {
+  --app-bg: #f6f4ef;
+  --panel-bg: #fbfaf8;
+  --grid-line: #2b2a28;
+  --button-bg: #1f2937;
+  --button-fg: #f9fafb;
+  --entry-bg: #ffffff;
+  --text-primary: #111827;
+  --text-muted: #374151;
+  --border: #d6d3cd;
+  --user-cell: #ffa500;
+  --solved-cell: #32cd32;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", Tahoma, sans-serif;
+  line-height: 1.5;
+  background:
+    radial-gradient(circle at 10% 0%, #e8e2d7 0%, transparent 48%),
+    radial-gradient(circle at 100% 0%, #ece8df 0%, transparent 45%),
+    var(--app-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(1rem, 2.5vw, 2.2rem);
+}
+
+.app-shell {
+  width: min(980px, 100%);
+  background: transparent;
+  animation: rise-in 320ms ease-out;
+  display: grid;
+  gap: 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.6vw, 2.6rem);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin: 0.45rem 0 0;
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: clamp(0.98rem, 1.6vw, 1.08rem);
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(0.9rem, 1.4vw, 1.2rem);
+  box-shadow: 0 10px 28px rgba(31, 41, 55, 0.08);
+}
+
+.controls {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.controls label {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.3rem;
+  user-select: none;
+}
+
+.toggle-wrap input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--button-bg);
+}
+
+select,
+button,
+input {
+  font: inherit;
+}
+
+select {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.46rem 0.6rem;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.52rem 0.82rem;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  opacity: 0.94;
+}
+
+.board-wrap {
+  display: grid;
+  place-items: center;
+  padding: 0.35rem;
+  overflow-x: auto;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 2px;
+  background: var(--grid-line);
+  border: 2px solid var(--grid-line);
+  border-radius: 10px;
+  width: min(640px, 100%);
+  aspect-ratio: 1 / 1;
+  min-width: 312px;
+}
+
+.cell {
+  border: 0;
+  text-align: center;
+  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--entry-bg);
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.cell:focus {
+  box-shadow: inset 0 0 0 2px #111827;
+  z-index: 2;
+  position: relative;
+}
+
+.thick-right {
+  box-shadow: inset -2px 0 0 var(--grid-line);
+}
+
+.thick-bottom {
+  box-shadow: inset 0 -2px 0 var(--grid-line);
+}
+
+.status {
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 720px) {
+  .controls {
+    gap: 0.5rem;
+  }
+
+  .controls label {
+    width: 100%;
+  }
+
+  .toggle-wrap {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  button,
+  select {
+    flex: 1 1 44%;
+    min-width: 120px;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
