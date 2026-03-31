@@ -53,6 +53,10 @@ BUTTON_LABELS = {
     "load_latest": "Load Latest",
 }
 
+UI_OPTIONS = {
+    "wrap_navigation_default": False,
+}
+
 
 def difficulty_options() -> tuple[str, ...]:
     """Return the shared ordered list of supported difficulty levels."""
@@ -67,7 +71,5 @@ def get_ui_config() -> dict[str, Any]:
         "buttons": BUTTON_LABELS,
         "difficulty_options": list(difficulty_options()),
         "difficulty_presets": DIFFICULTY_PRESETS,
-        "options": {
-            "wrap_navigation_default": False,
-        },
+        "options": UI_OPTIONS,
     }

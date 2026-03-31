@@ -14,7 +14,7 @@ from solver import (
     save_game,
     solve_sudoku,
 )
-from ui_config import BUTTON_LABELS, LABELS, THEME_COLORS, difficulty_options
+from ui_config import BUTTON_LABELS, LABELS, THEME_COLORS, UI_OPTIONS, difficulty_options
 
 APP_BG = THEME_COLORS["app_bg"]
 PANEL_BG = THEME_COLORS["panel_bg"]
@@ -37,6 +37,7 @@ class SudokuTkApp:
 
         self.status_text = tk.StringVar(value=LABELS["default_status"])
         self.difficulty = tk.StringVar(value=difficulty_options()[0])
+        self.wrap_navigation = tk.BooleanVar(value=bool(UI_OPTIONS.get("wrap_navigation_default", False)))
 
         self._build_ui()
 
@@ -83,6 +84,18 @@ class SudokuTkApp:
         self._add_button(controls, BUTTON_LABELS["save"], self.save_current)
         self._add_button(controls, BUTTON_LABELS["load_latest"], self.load_latest)
 
+        tk.Checkbutton(
+            controls,
+            text=LABELS["wrap_navigation"],
+            variable=self.wrap_navigation,
+            bg=PANEL_BG,
+            fg=THEME_COLORS["text_muted"],
+            activebackground=PANEL_BG,
+            activeforeground=THEME_COLORS["text_primary"],
+            selectcolor=PANEL_BG,
+            highlightthickness=0,
+        ).pack(side="left", padx=(8, 0))
+
         board_wrap = tk.Frame(outer, bg=PANEL_BG, padx=14, pady=14, highlightbackground=THEME_COLORS["border"], highlightthickness=1)
         board_wrap.pack(fill="both", expand=True)
 
@@ -104,6 +117,8 @@ class SudokuTkApp:
                 pady = (2 if row % 3 == 0 else 1, 2 if row % 3 == 2 else 1)
                 cell.grid(row=row, column=col, padx=padx, pady=pady, ipadx=9, ipady=8)
                 cell.bind("<KeyRelease>", lambda event, r=row, c=col: self.on_cell_change(r, c))
+                cell.bind("<KeyPress>", lambda event, r=row, c=col: self.on_cell_keypress(event, r, c))
+                cell.bind("<FocusIn>", lambda event: event.widget.select_range(0, tk.END))
                 row_widgets.append(cell)
             self.entries.append(row_widgets)
 
@@ -131,6 +146,77 @@ class SudokuTkApp:
             activebackground="#111827",
             activeforeground="#ffffff",
         ).pack(side="left", padx=4)
+
+    def _normalize_coords(self, row: int, col: int) -> tuple[int, int] | None:
+        if self.wrap_navigation.get():
+            return row % GRID_SIZE, col % GRID_SIZE
+
+        if 0 <= row < GRID_SIZE and 0 <= col < GRID_SIZE:
+            return row, col
+        return None
+
+    def _move_focus(self, row: int, col: int) -> None:
+        coords = self._normalize_coords(row, col)
+        if coords is None:
+            return
+        r, c = coords
+        entry = self.entries[r][c]
+        entry.focus_set()
+        entry.select_range(0, tk.END)
+
+    def _set_cell(self, row: int, col: int, value: int, mark_user: bool) -> None:
+        entry = self.entries[row][col]
+        self.grid_data[row][col] = value
+        self.user_entered[row][col] = mark_user and value != 0
+
+        entry.delete(0, tk.END)
+        if value != 0:
+            entry.insert(0, str(value))
+
+        if value == 0:
+            entry.configure(bg=ENTRY_BG)
+        elif self.user_entered[row][col]:
+            entry.configure(bg=USER_COLOR)
+        else:
+            entry.configure(bg=SOLVED_COLOR)
+
+    def on_cell_keypress(self, event: tk.Event, row: int, col: int):
+        key = event.keysym
+        char = event.char
+
+        if key == "Up":
+            self._move_focus(row - 1, col)
+            return "break"
+        if key == "Down":
+            self._move_focus(row + 1, col)
+            return "break"
+        if key == "Left":
+            self._move_focus(row, col - 1)
+            return "break"
+        if key == "Right":
+            self._move_focus(row, col + 1)
+            return "break"
+
+        if key == "Return":
+            self._move_focus(row - 1 if (event.state & 0x0001) else row + 1, col)
+            return "break"
+
+        if key in {"BackSpace", "Delete"}:
+            self._set_cell(row, col, 0, False)
+            if key == "BackSpace":
+                self._move_focus(row, col - 1)
+            return "break"
+
+        if char in {"0", "."}:
+            self._set_cell(row, col, 0, False)
+            return "break"
+
+        if char.isdigit() and char in {str(n) for n in range(1, 10)}:
+            self._set_cell(row, col, int(char), True)
+            self._move_focus(row, col + 1)
+            return "break"
+
+        return None
 
     def on_cell_change(self, row: int, col: int) -> None:
         raw_value = self.entries[row][col].get().strip()

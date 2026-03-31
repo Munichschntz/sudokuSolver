@@ -221,6 +221,27 @@
     const statusEl = document.getElementById("status");
     const difficultyEl = document.getElementById("difficulty");
     const wrapNavEl = document.getElementById("wrap-nav");
+    const WRAP_STORAGE_KEY = "sudoku.wrapNavigation";
+
+    function readWrapPreference() {
+      try {
+        const saved = window.localStorage.getItem(WRAP_STORAGE_KEY);
+        if (saved === null) {
+          return null;
+        }
+        return saved === "true";
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function persistWrapPreference(value) {
+      try {
+        window.localStorage.setItem(WRAP_STORAGE_KEY, value ? "true" : "false");
+      } catch (_error) {
+        // Ignore storage errors (private mode or disabled storage).
+      }
+    }
 
     function getCell(row, col) {
       if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
@@ -274,7 +295,9 @@
       document.getElementById("save").textContent = config.buttons.save;
       document.getElementById("load").textContent = config.buttons.load_latest;
       document.getElementById("wrap-nav-label").textContent = config.labels.wrap_navigation;
-      wrapNavEl.checked = Boolean(config.options && config.options.wrap_navigation_default);
+      const defaultWrap = Boolean(config.options && config.options.wrap_navigation_default);
+      const savedWrap = readWrapPreference();
+      wrapNavEl.checked = savedWrap === null ? defaultWrap : savedWrap;
 
       config.difficulty_options.forEach((name) => {
         const option = document.createElement("option");
@@ -484,6 +507,9 @@
       });
       document.getElementById("load").addEventListener("click", () => {
         loadLatest().catch((error) => setStatus(error.message));
+      });
+      wrapNavEl.addEventListener("change", () => {
+        persistWrapPreference(wrapNavEl.checked);
       });
     }
 
