@@ -1,4 +1,4 @@
-"""Tkinter Sudoku UI backed by the shared solver module."""
+"""Tkinter Sudoku UI backed by the solver module."""
 
 from __future__ import annotations
 

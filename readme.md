@@ -1,13 +1,13 @@
 # Sudoku Solver
 
-Desktop Sudoku project with a Tkinter interface and a shared solver core.
+Desktop Sudoku project with a Tkinter interface and a separate solver module.
 
 ## Features
 
 - Backtracking Sudoku solve and random puzzle generation
 - Difficulty presets from shared UI config
 - Save/load game states as JSON under saves/
-- Shared color metadata for the desktop UI
+- Color metadata for the desktop UI
 
 ## Requirements
 
@@ -23,7 +23,7 @@ python tkinter_gui.py
 
 - tkinter_gui.py: Tkinter desktop interface
 - solver.py: solver, generator, and JSON save/load core
-- ui_config.py: shared labels, colors, and options
+- ui_config.py: labels, colors, and options
 - saves/: saved game states
 
 ## Notes

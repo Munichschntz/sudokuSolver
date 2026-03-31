@@ -1,4 +1,4 @@
-"""Shared Sudoku core logic used by the desktop app."""
+"""Sudoku solving, generation, and save/load logic for the desktop app."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ui_config import DIFFICULTY_PRESETS, THEME_COLORS
 GRID_SIZE = 9
 BOX_SIZE = 3
 
-# Shared color palette used by Tkinter and web responses.
+# Color palette used by the desktop UI and saved game metadata.
 USER_COLOR = THEME_COLORS["user_cell"]
 SOLVED_COLOR = THEME_COLORS["solved_cell"]
 
@@ -171,7 +171,7 @@ def cell_colors_for_grid(grid: Grid, user_entered: BoolGrid | None = None) -> Li
 
 
 def grid_to_json(grid: Grid, user_entered: BoolGrid | None = None) -> dict:
-    """Serialize a grid and color metadata for API/UI use."""
+    """Serialize a grid and color metadata for UI and save-state use."""
     validate_grid_shape(grid)
     return {
         "grid": [row[:] for row in grid],

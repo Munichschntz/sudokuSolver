@@ -1,4 +1,4 @@
-"""Shared UI configuration for Tkinter and web clients."""
+"""UI configuration for the Tkinter desktop app."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ DIFFICULTY_PRESETS = {
 
 LABELS = {
     "app_title": "Sudoku Studio",
-    "subtitle": "One solver core for desktop and web.",
+    "subtitle": "Desktop Sudoku with a separate solver module.",
     "difficulty": "Difficulty:",
     "default_status": "Enter values or generate a puzzle.",
     "invalid_input": "Only digits 1-9 are allowed in a cell.",
@@ -59,12 +59,12 @@ UI_OPTIONS = {
 
 
 def difficulty_options() -> tuple[str, ...]:
-    """Return the shared ordered list of supported difficulty levels."""
+    """Return the ordered list of supported difficulty levels."""
     return tuple(DIFFICULTY_PRESETS.keys())
 
 
 def get_ui_config() -> dict[str, Any]:
-    """Return JSON-serializable UI config payload for clients."""
+    """Return a JSON-serializable UI config payload."""
     return {
         "theme": THEME_COLORS,
         "labels": LABELS,
