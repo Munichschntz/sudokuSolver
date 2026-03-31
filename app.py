@@ -19,7 +19,7 @@ from crud import (
     get_user,
 )
 from schemas import UserCreate, UserOut, GameStateCreate, GameStateOut, SolveRequest, SolveResponse
-from solver import GRID_SIZE, grid_to_json, solve
+from solver import GRID_SIZE, generate_puzzle as generate_sudoku_puzzle, grid_to_json, solve
 from ui_config import get_ui_config
 
 DATABASE_URL = "sqlite:///./sudoku.db"
@@ -42,8 +42,8 @@ def get_db():
     finally:
         db.close()
 
-# Simple token storage in memory for demo
-tokens: dict[str, tuple[int, str]] = {}  # token -> (user_id, expiry)
+# Simple token storage in memory for demo.
+tokens: dict[str, int] = {}  # token -> user_id
 
 @app.post("/register", response_model=UserOut)
 async def register(user_in: UserCreate, db: SessionLocal = Depends(get_db)):
@@ -60,13 +60,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: SessionLoc
     # Generate simple token using UUID
     import uuid
     token = str(uuid.uuid4())
-    tokens[token] = (user.id, "infinite")  # no expiry for demo
+    tokens[token] = user.id
     return {"access_token": token, "token_type": "bearer"}
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: SessionLocal = Depends(get_db)):
     if token not in tokens:
         raise HTTPException(status_code=401, detail="Invalid token")
-    user_id, _ = tokens[token]
+    user_id = tokens[token]
     user = get_user(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -124,8 +124,7 @@ async def get_game(game_id: int, current_user: User = Depends(get_current_user),
 # Optional: endpoint to generate puzzle
 @app.get("/generate_puzzle", response_model=dict[str, List[List[int]]])
 async def generate_puzzle(difficulty: str = "Easy"):
-    from solver import generate_puzzle
-    puzzle = generate_puzzle(difficulty)
+    puzzle = generate_sudoku_puzzle(difficulty)
     return {"puzzle": puzzle}
 
 # Public endpoint by design to support anonymous puzzle solving.
