@@ -14,23 +14,20 @@ from solver import (
     save_game,
     solve_sudoku,
 )
+from ui_config import BUTTON_LABELS, LABELS, THEME_COLORS, difficulty_options
 
-APP_BG = "#f6f4ef"
-PANEL_BG = "#fbfaf8"
-GRID_LINE = "#2b2a28"
-BUTTON_BG = "#1f2937"
-BUTTON_FG = "#f9fafb"
-ENTRY_BG = "#ffffff"
-
-
-def _difficulty_options() -> tuple[str, ...]:
-    return ("Easy", "Medium", "Hard")
+APP_BG = THEME_COLORS["app_bg"]
+PANEL_BG = THEME_COLORS["panel_bg"]
+GRID_LINE = THEME_COLORS["grid_line"]
+BUTTON_BG = THEME_COLORS["button_bg"]
+BUTTON_FG = THEME_COLORS["button_fg"]
+ENTRY_BG = THEME_COLORS["entry_bg"]
 
 
 class SudokuTkApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("Sudoku Solver")
+        self.root.title(LABELS["app_title"])
         self.root.configure(bg=APP_BG)
         self.root.minsize(680, 780)
 
@@ -38,8 +35,8 @@ class SudokuTkApp:
         self.user_entered = [[False for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
         self.entries: list[list[tk.Entry]] = []
 
-        self.status_text = tk.StringVar(value="Enter values or generate a puzzle.")
-        self.difficulty = tk.StringVar(value="Easy")
+        self.status_text = tk.StringVar(value=LABELS["default_status"])
+        self.difficulty = tk.StringVar(value=difficulty_options()[0])
 
         self._build_ui()
 
@@ -52,41 +49,41 @@ class SudokuTkApp:
 
         tk.Label(
             header,
-            text="Sudoku Studio",
+            text=LABELS["app_title"],
             font=("Segoe UI", 24, "bold"),
             bg=APP_BG,
-            fg="#111827",
+            fg=THEME_COLORS["text_primary"],
         ).pack(anchor="w")
 
         tk.Label(
             header,
-            text="Same solver engine as the web app, with instant desktop controls.",
+            text=LABELS["subtitle"],
             font=("Segoe UI", 11),
             bg=APP_BG,
-            fg="#374151",
+            fg=THEME_COLORS["text_muted"],
         ).pack(anchor="w", pady=(4, 0))
 
-        controls = tk.Frame(outer, bg=PANEL_BG, padx=10, pady=10, highlightbackground="#d6d3cd", highlightthickness=1)
+        controls = tk.Frame(outer, bg=PANEL_BG, padx=10, pady=10, highlightbackground=THEME_COLORS["border"], highlightthickness=1)
         controls.pack(fill="x", pady=(0, 12))
 
-        ttk.Label(controls, text="Difficulty:", background=PANEL_BG).pack(side="left", padx=(0, 8))
+        ttk.Label(controls, text=LABELS["difficulty"], background=PANEL_BG).pack(side="left", padx=(0, 8))
 
         difficulty_box = ttk.Combobox(
             controls,
-            values=_difficulty_options(),
+            values=difficulty_options(),
             textvariable=self.difficulty,
             width=10,
             state="readonly",
         )
         difficulty_box.pack(side="left", padx=(0, 10))
 
-        self._add_button(controls, "Generate", self.generate_new)
-        self._add_button(controls, "Solve", self.solve_current)
-        self._add_button(controls, "Clear", self.clear_grid)
-        self._add_button(controls, "Save", self.save_current)
-        self._add_button(controls, "Load Latest", self.load_latest)
+        self._add_button(controls, BUTTON_LABELS["generate"], self.generate_new)
+        self._add_button(controls, BUTTON_LABELS["solve"], self.solve_current)
+        self._add_button(controls, BUTTON_LABELS["clear"], self.clear_grid)
+        self._add_button(controls, BUTTON_LABELS["save"], self.save_current)
+        self._add_button(controls, BUTTON_LABELS["load_latest"], self.load_latest)
 
-        board_wrap = tk.Frame(outer, bg=PANEL_BG, padx=14, pady=14, highlightbackground="#d6d3cd", highlightthickness=1)
+        board_wrap = tk.Frame(outer, bg=PANEL_BG, padx=14, pady=14, highlightbackground=THEME_COLORS["border"], highlightthickness=1)
         board_wrap.pack(fill="both", expand=True)
 
         board = tk.Frame(board_wrap, bg=GRID_LINE)
@@ -115,7 +112,7 @@ class SudokuTkApp:
             textvariable=self.status_text,
             font=("Segoe UI", 10),
             bg=APP_BG,
-            fg="#374151",
+            fg=THEME_COLORS["text_muted"],
             anchor="w",
         )
         footer.pack(fill="x", pady=(12, 0))
@@ -149,7 +146,7 @@ class SudokuTkApp:
             self.grid_data[row][col] = 0
             self.user_entered[row][col] = False
             self.entries[row][col].configure(bg=ENTRY_BG)
-            self.status_text.set("Only digits 1-9 are allowed in a cell.")
+            self.status_text.set(LABELS["invalid_input"])
             return
 
         value = int(raw_value)
@@ -182,14 +179,14 @@ class SudokuTkApp:
         self.grid_data = generate_puzzle(self.difficulty.get())
         self.user_entered = [[cell != 0 for cell in row] for row in self.grid_data]
         self._sync_board_from_state(mark_existing_as_user=True)
-        self.status_text.set(f"Generated {self.difficulty.get()} puzzle.")
+        self.status_text.set(LABELS["generated_status"].format(difficulty=self.difficulty.get()))
 
     def solve_current(self) -> None:
         original = [row[:] for row in self.grid_data]
 
         if not solve_sudoku(self.grid_data):
-            messagebox.showerror("Unsolvable", "This puzzle cannot be solved.")
-            self.status_text.set("Puzzle appears unsolvable. Check your inputs.")
+            messagebox.showerror(LABELS["unsolved_title"], LABELS["unsolved_message"])
+            self.status_text.set(LABELS["unsolved_status"])
             return
 
         for row in range(GRID_SIZE):
@@ -200,29 +197,29 @@ class SudokuTkApp:
                     self.user_entered[row][col] = True
 
         self._sync_board_from_state()
-        self.status_text.set("Solved successfully.")
+        self.status_text.set(LABELS["solved_status"])
 
     def clear_grid(self) -> None:
         self.grid_data = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
         self.user_entered = [[False for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
         self._sync_board_from_state()
-        self.status_text.set("Grid cleared.")
+        self.status_text.set(LABELS["cleared_status"])
 
     def save_current(self) -> None:
         solved = all(cell != 0 for row in self.grid_data for cell in row)
         path = save_game(self.grid_data, self.user_entered, solved)
-        self.status_text.set(f"Saved game to {path}.")
+        self.status_text.set(LABELS["saved_status"].format(path=path))
 
     def load_latest(self) -> None:
         states = load_saved_states()
         if not states:
-            messagebox.showinfo("No saves", "No saved puzzles found.")
+            messagebox.showinfo(LABELS["no_saves_title"], LABELS["no_saves_message"])
             return
 
         latest = states[0]
         self.grid_data = [[int(cell) for cell in row] for row in latest.get("grid", [])]
         if len(self.grid_data) != GRID_SIZE or any(len(row) != GRID_SIZE for row in self.grid_data):
-            messagebox.showerror("Invalid save", "Latest save file has invalid grid data.")
+            messagebox.showerror(LABELS["invalid_save_title"], LABELS["invalid_save_message"])
             return
 
         saved_users = latest.get("user_entered")
@@ -233,7 +230,7 @@ class SudokuTkApp:
 
         self._sync_board_from_state()
         timestamp = latest.get("timestamp", "unknown time")
-        self.status_text.set(f"Loaded latest save from {timestamp}.")
+        self.status_text.set(LABELS["loaded_status"].format(timestamp=timestamp))
 
 
 def main() -> None:

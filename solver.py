@@ -8,12 +8,14 @@ import random
 from pathlib import Path
 from typing import List
 
+from ui_config import DIFFICULTY_PRESETS, THEME_COLORS
+
 GRID_SIZE = 9
 BOX_SIZE = 3
 
 # Shared color palette used by Tkinter and web responses.
-USER_COLOR = "#ffa500"
-SOLVED_COLOR = "#32cd32"
+USER_COLOR = THEME_COLORS["user_cell"]
+SOLVED_COLOR = THEME_COLORS["solved_cell"]
 
 SAVE_DIR = Path("saves")
 
@@ -133,13 +135,8 @@ def generate_full_solution() -> Grid:
 
 def generate_puzzle(difficulty: str = "Easy") -> Grid:
     """Generate a Sudoku puzzle by removing numbers from a solved board."""
-    clues_by_difficulty = {
-        "easy": 40,
-        "medium": 32,
-        "hard": 26,
-    }
-
-    clues = clues_by_difficulty.get(difficulty.lower(), clues_by_difficulty["easy"])
+    lookup = {name.lower(): clues for name, clues in DIFFICULTY_PRESETS.items()}
+    clues = lookup.get(difficulty.lower(), DIFFICULTY_PRESETS["Easy"])
     puzzle = [row[:] for row in generate_full_solution()]
 
     cells_to_clear = GRID_SIZE * GRID_SIZE - clues

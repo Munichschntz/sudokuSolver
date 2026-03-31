@@ -3,7 +3,7 @@
 from pathlib import Path
 import sys
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 
 # Allow importing the shared root-level solver module from this subfolder.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -18,13 +18,19 @@ from solver import (  # noqa: E402
     save_game,
     solve_sudoku,
 )
+from ui_config import get_ui_config  # noqa: E402
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=str(PROJECT_ROOT / "webapp" / "templates"))
 
 @app.route("/")
 def index():
-    """Simple health response for the API root."""
-    return jsonify({"name": "sudoku-web-api", "status": "ok", "grid_size": GRID_SIZE})
+    """Render the web Sudoku UI."""
+    return render_template("index.html", ui_config=get_ui_config(), grid_size=GRID_SIZE)
+
+@app.route("/config")
+def config():
+    """Return shared UI config for API consumers."""
+    return jsonify(get_ui_config())
 
 @app.route("/generate")
 def generate():
