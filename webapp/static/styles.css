@@ -79,6 +79,9 @@ h1 {
   align-items: center;
   gap: 0.35rem;
   margin-left: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.5);
   user-select: none;
 }
 
@@ -169,6 +172,66 @@ button:hover {
   font-size: 0.95rem;
 }
 
+body.mode-compact {
+  padding: clamp(0.6rem, 1.6vw, 1.1rem);
+}
+
+body.mode-compact .app-shell {
+  gap: 0.65rem;
+}
+
+body.mode-compact .panel {
+  padding: 0.72rem;
+  border-radius: 12px;
+}
+
+body.mode-compact .controls {
+  gap: 0.45rem;
+}
+
+body.mode-compact .subtitle {
+  margin-top: 0.28rem;
+  font-size: 0.95rem;
+}
+
+body.mode-compact button {
+  padding: 0.44rem 0.68rem;
+}
+
+body.mode-compact .board {
+  width: min(580px, 100%);
+}
+
+body.mode-paper {
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  background:
+    linear-gradient(145deg, #f5efde 0%, #efe6d0 62%, #e8dcc2 100%),
+    var(--app-bg);
+}
+
+body.mode-paper .panel {
+  background: rgba(255, 250, 237, 0.9);
+  border-color: #cdbd97;
+  box-shadow: 0 12px 24px rgba(91, 73, 44, 0.15);
+}
+
+body.mode-paper .board {
+  background: #3e3425;
+  border-color: #3e3425;
+}
+
+body.mode-paper .cell {
+  color: #2d261b;
+}
+
+body.mode-paper button {
+  background: #725128;
+}
+
+body.mode-paper .toggle-wrap {
+  background: rgba(255, 245, 223, 0.8);
+}
+
 @media (max-width: 720px) {
   .controls {
     gap: 0.5rem;
@@ -181,6 +244,7 @@ button:hover {
   .toggle-wrap {
     margin-left: 0;
     width: 100%;
+    justify-content: flex-start;
   }
 
   button,

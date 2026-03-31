@@ -24,6 +24,14 @@
           <input type="checkbox" id="wrap-nav" />
           <span id="wrap-nav-label"></span>
         </label>
+        <label class="toggle-wrap" for="compact-mode">
+          <input type="checkbox" id="compact-mode" />
+          <span id="compact-mode-label"></span>
+        </label>
+        <label class="toggle-wrap" for="paper-mode">
+          <input type="checkbox" id="paper-mode" />
+          <span id="paper-mode-label"></span>
+        </label>
       </div>
     </section>
 
@@ -48,7 +56,11 @@
     const statusEl = document.getElementById("status");
     const difficultyEl = document.getElementById("difficulty");
     const wrapNavEl = document.getElementById("wrap-nav");
+    const compactModeEl = document.getElementById("compact-mode");
+    const paperModeEl = document.getElementById("paper-mode");
     const WRAP_STORAGE_KEY = "sudoku.wrapNavigation";
+    const COMPACT_STORAGE_KEY = "sudoku.compactMode";
+    const PAPER_STORAGE_KEY = "sudoku.paperMode";
 
     function readWrapPreference() {
       try {
@@ -68,6 +80,31 @@
       } catch (_error) {
         // Ignore storage errors (private mode or disabled storage).
       }
+    }
+
+    function readBoolPreference(key, fallback = false) {
+      try {
+        const saved = window.localStorage.getItem(key);
+        if (saved === null) {
+          return fallback;
+        }
+        return saved === "true";
+      } catch (_error) {
+        return fallback;
+      }
+    }
+
+    function persistBoolPreference(key, value) {
+      try {
+        window.localStorage.setItem(key, value ? "true" : "false");
+      } catch (_error) {
+        // Ignore storage errors (private mode or disabled storage).
+      }
+    }
+
+    function applyAppearanceModes() {
+      document.body.classList.toggle("mode-compact", compactModeEl.checked);
+      document.body.classList.toggle("mode-paper", paperModeEl.checked);
     }
 
     function getCell(row, col) {
@@ -122,9 +159,14 @@
       document.getElementById("save").textContent = config.buttons.save;
       document.getElementById("load").textContent = config.buttons.load_latest;
       document.getElementById("wrap-nav-label").textContent = config.labels.wrap_navigation;
+      document.getElementById("compact-mode-label").textContent = "Compact layout";
+      document.getElementById("paper-mode-label").textContent = "Soft paper theme";
       const defaultWrap = Boolean(config.options && config.options.wrap_navigation_default);
       const savedWrap = readWrapPreference();
       wrapNavEl.checked = savedWrap === null ? defaultWrap : savedWrap;
+      compactModeEl.checked = readBoolPreference(COMPACT_STORAGE_KEY, false);
+      paperModeEl.checked = readBoolPreference(PAPER_STORAGE_KEY, false);
+      applyAppearanceModes();
 
       config.difficulty_options.forEach((name) => {
         const option = document.createElement("option");
@@ -337,6 +379,14 @@
       });
       wrapNavEl.addEventListener("change", () => {
         persistWrapPreference(wrapNavEl.checked);
+      });
+      compactModeEl.addEventListener("change", () => {
+        persistBoolPreference(COMPACT_STORAGE_KEY, compactModeEl.checked);
+        applyAppearanceModes();
+      });
+      paperModeEl.addEventListener("change", () => {
+        persistBoolPreference(PAPER_STORAGE_KEY, paperModeEl.checked);
+        applyAppearanceModes();
       });
     }
 
