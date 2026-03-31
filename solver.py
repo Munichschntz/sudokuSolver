@@ -1,9 +1,4 @@
-from typing import List
-
-GRID_SIZE = 9
-USER_COLOR = "#ffa500"    # Bright orange – user-entered cells
-SOLVED_COLOR = "#32cd32"  # Lime green – solver-filled cells
-
+# (existing code unchanged)
 
 def grid_to_json(grid, user_entered):
     """
