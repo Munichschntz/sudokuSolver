@@ -4,49 +4,58 @@ setlocal
 REM Start in the repository root regardless of where the script is called from.
 cd /d "%~dp0"
 
-set "PYTHON_CMD="
-set "ACTIVATE_CMD="
+set "BOOTSTRAP_PYTHON="
+set "VENV_DIR=venv"
+set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
+set "ACTIVATE_CMD=%VENV_DIR%\Scripts\activate.bat"
 
-if exist "venv\Scripts\python.exe" (
-    set "PYTHON_CMD=venv\Scripts\python.exe"
-    if exist "venv\Scripts\activate.bat" (
-        set "ACTIVATE_CMD=venv\Scripts\activate.bat"
-    )
-) else if exist ".venv\Scripts\python.exe" (
-    set "PYTHON_CMD=.venv\Scripts\python.exe"
-    if exist ".venv\Scripts\activate.bat" (
-        set "ACTIVATE_CMD=.venv\Scripts\activate.bat"
-    )
-) else (
+if not exist "%VENV_PYTHON%" (
+    echo No virtual environment found at %VENV_DIR%. Creating one now...
+
     where py >nul 2>&1
     if %ERRORLEVEL%==0 (
-        set "PYTHON_CMD=py -3"
+        set "BOOTSTRAP_PYTHON=py -3"
     ) else (
         where python >nul 2>&1
         if %ERRORLEVEL%==0 (
-            set "PYTHON_CMD=python"
+            set "BOOTSTRAP_PYTHON=python"
         )
     )
 )
 
-if "%PYTHON_CMD%"=="" (
-    echo Python was not found. Install Python 3 and try again.
+if not exist "%VENV_PYTHON%" if "%BOOTSTRAP_PYTHON%"=="" (
+    echo Python was not found, so the virtual environment could not be created.
     exit /b 1
 )
 
-echo Using Python command: %PYTHON_CMD%
-
-if not "%ACTIVATE_CMD%"=="" (
-    echo Activating virtual environment: %ACTIVATE_CMD%
-    call "%ACTIVATE_CMD%"
+if not exist "%VENV_PYTHON%" (
+    %BOOTSTRAP_PYTHON% -m venv "%VENV_DIR%"
     if not %ERRORLEVEL%==0 (
-        echo Failed to activate the virtual environment.
+        echo Failed to create the virtual environment.
         exit /b 1
     )
 )
 
+if not exist "%ACTIVATE_CMD%" (
+    echo Virtual environment activation script was not found at %ACTIVATE_CMD%.
+    exit /b 1
+)
+
+echo Activating virtual environment: %ACTIVATE_CMD%
+call "%ACTIVATE_CMD%"
+if not %ERRORLEVEL%==0 (
+    echo Failed to activate the virtual environment.
+    exit /b 1
+)
+
+if not exist "%VENV_PYTHON%" (
+    echo Virtual environment Python was not found at %VENV_PYTHON%.
+    exit /b 1
+)
+
+echo Using Python command: %VENV_PYTHON%
 echo Starting Sudoku desktop app
-%PYTHON_CMD% tkinter_gui.py
+"%VENV_PYTHON%" tkinter_gui.py
 if not %ERRORLEVEL%==0 (
     echo Failed to start the desktop app.
     exit /b 1
