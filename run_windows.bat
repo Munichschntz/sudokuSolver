@@ -29,16 +29,9 @@ if "%PYTHON_CMD%"=="" (
 
 echo Using Python command: %PYTHON_CMD%
 
-REM Install runtime dependencies if they are missing.
-%PYTHON_CMD% -c "import fastapi, uvicorn, sqlalchemy, bcrypt" >nul 2>&1
+echo Starting Sudoku desktop app
+%PYTHON_CMD% tkinter_gui.py
 if not %ERRORLEVEL%==0 (
-    echo Installing required packages...
-    %PYTHON_CMD% -m pip install fastapi uvicorn sqlalchemy bcrypt python-multipart jinja2
-    if not %ERRORLEVEL%==0 (
-        echo Failed to install dependencies.
-        exit /b 1
-    )
+    echo Failed to start the desktop app.
+    exit /b 1
 )
-
-echo Starting Sudoku web app on http://127.0.0.1:8000
-%PYTHON_CMD% -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload

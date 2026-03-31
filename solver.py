@@ -1,4 +1,4 @@
-"""Shared Sudoku core logic used by both desktop and web apps."""
+"""Shared Sudoku core logic used by the desktop app."""
 
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ def solve(grid: Grid) -> Grid:
 
 
 def solve_sudoku(grid: Grid) -> bool:
-    """Compatibility wrapper used by the Flask app."""
+    """Boolean-returning compatibility wrapper used by the desktop UI."""
     validate_grid_shape(grid)
     return _solve_backtracking(grid)
 
