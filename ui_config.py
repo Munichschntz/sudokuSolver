@@ -42,6 +42,7 @@ LABELS = {
     "no_saves_message": "No saved puzzles found.",
     "invalid_save_title": "Invalid save",
     "invalid_save_message": "Latest save file has invalid grid data.",
+    "wrap_navigation": "Wrap navigation",
 }
 
 BUTTON_LABELS = {
@@ -66,4 +67,7 @@ def get_ui_config() -> dict[str, Any]:
         "buttons": BUTTON_LABELS,
         "difficulty_options": list(difficulty_options()),
         "difficulty_presets": DIFFICULTY_PRESETS,
+        "options": {
+            "wrap_navigation_default": False,
+        },
     }

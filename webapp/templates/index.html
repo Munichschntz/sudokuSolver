@@ -73,6 +73,20 @@
       color: var(--text-muted);
     }
 
+    .toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-left: 0.3rem;
+      user-select: none;
+    }
+
+    .toggle-wrap input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--button-bg);
+    }
+
     select,
     button,
     input {
@@ -179,6 +193,10 @@
         <button id="clear"></button>
         <button id="save"></button>
         <button id="load"></button>
+        <label class="toggle-wrap" for="wrap-nav">
+          <input type="checkbox" id="wrap-nav" />
+          <span id="wrap-nav-label"></span>
+        </label>
       </div>
     </section>
 
@@ -202,6 +220,7 @@
     const boardEl = document.getElementById("board");
     const statusEl = document.getElementById("status");
     const difficultyEl = document.getElementById("difficulty");
+    const wrapNavEl = document.getElementById("wrap-nav");
 
     function getCell(row, col) {
       if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
@@ -210,8 +229,19 @@
       return boardEl.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
     }
 
+    function normalizeCoords(row, col) {
+      if (wrapNavEl && wrapNavEl.checked) {
+        return {
+          row: ((row % gridSize) + gridSize) % gridSize,
+          col: ((col % gridSize) + gridSize) % gridSize,
+        };
+      }
+      return { row, col };
+    }
+
     function moveFocus(row, col) {
-      const target = getCell(row, col);
+      const normalized = normalizeCoords(row, col);
+      const target = getCell(normalized.row, normalized.col);
       if (target) {
         target.focus();
         target.select();
@@ -243,6 +273,8 @@
       document.getElementById("clear").textContent = config.buttons.clear;
       document.getElementById("save").textContent = config.buttons.save;
       document.getElementById("load").textContent = config.buttons.load_latest;
+      document.getElementById("wrap-nav-label").textContent = config.labels.wrap_navigation;
+      wrapNavEl.checked = Boolean(config.options && config.options.wrap_navigation_default);
 
       config.difficulty_options.forEach((name) => {
         const option = document.createElement("option");
