@@ -18,7 +18,7 @@ class GameState(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     grid = Column(JSON, nullable=False)
     cell_colors = Column(JSON, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     solved = Column(Boolean, default=False)
 
     user = relationship('User', back_populates='games')

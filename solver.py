@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import random
 from pathlib import Path
@@ -190,8 +190,9 @@ def save_game(
     users = normalize_user_entered(grid, user_entered)
 
     save_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-    filename = save_dir / f"save_{int(datetime.utcnow().timestamp())}.json"
+    now_utc = datetime.now(timezone.utc)
+    timestamp = now_utc.isoformat(timespec="seconds").replace("+00:00", "Z")
+    filename = save_dir / f"save_{int(now_utc.timestamp())}.json"
 
     payload = {
         "grid": [row[:] for row in grid],
@@ -217,7 +218,12 @@ def load_saved_states(save_dir: Path = SAVE_DIR) -> List[dict]:
         try:
             with json_file.open("r", encoding="utf-8") as file_obj:
                 state = json.load(file_obj)
-            state.setdefault("timestamp", datetime.utcfromtimestamp(json_file.stat().st_mtime).isoformat() + "Z")
+            state.setdefault(
+                "timestamp",
+                datetime.fromtimestamp(json_file.stat().st_mtime, tz=timezone.utc)
+                .isoformat(timespec="seconds")
+                .replace("+00:00", "Z"),
+            )
             states.append(state)
         except (json.JSONDecodeError, OSError):
             continue

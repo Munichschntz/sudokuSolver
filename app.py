@@ -1,6 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from pathlib import Path
+
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import uvicorn
 from typing import List
@@ -14,9 +16,11 @@ from crud import (
     create_game_state,
     get_game_states,
     get_game_state,
-    get_user,  # <-- added import for user lookup
+    get_user,
 )
-from schemas import UserCreate, UserOut, GameStateCreate, GameStateOut, SolveRequest
+from schemas import UserCreate, UserOut, GameStateCreate, GameStateOut, SolveRequest, SolveResponse
+from solver import GRID_SIZE, grid_to_json, solve
+from ui_config import get_ui_config
 
 DATABASE_URL = "sqlite:///./sudoku.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -26,7 +30,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sudoku Solver Web App")
 
-templates = Jinja2Templates(directory="templates")
+PROJECT_ROOT = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(PROJECT_ROOT / "webapp" / "templates"))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
@@ -69,7 +74,14 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: SessionLocal = Dep
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "ui_config": get_ui_config(),
+            "grid_size": GRID_SIZE,
+        },
+    )
 
 @app.post("/save_game", response_model=GameStateOut)
 async def save_game(game_in: GameStateCreate, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
@@ -116,21 +128,23 @@ async def generate_puzzle(difficulty: str = "Easy"):
     puzzle = generate_puzzle(difficulty)
     return {"puzzle": puzzle}
 
-# New endpoint to solve a given puzzle
-@app.post("/solve", response_model=List[List[int]])
-async def solve_puzzle(puzzle: SolveRequest, db: SessionLocal = Depends(get_db)):
+# Public endpoint by design to support anonymous puzzle solving.
+@app.post("/solve", response_model=SolveResponse)
+async def solve_puzzle(puzzle: SolveRequest):
     """
     Solves the Sudoku puzzle provided in the request. The puzzle must be a 9x9 grid.
     Returns the solved grid if possible; otherwise raises an HTTPException.
     """
     # Deep copy to avoid mutating input
+    original_grid = [row[:] for row in puzzle.grid]
     grid_copy = [row[:] for row in puzzle.grid]
     try:
-        from solver import solve
         solved_grid = solve(grid_copy)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Puzzle could not be solved: {e}")
-    return solved_grid
+
+    user_entered = [[original_grid[r][c] != 0 for c in range(GRID_SIZE)] for r in range(GRID_SIZE)]
+    return grid_to_json(solved_grid, user_entered)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

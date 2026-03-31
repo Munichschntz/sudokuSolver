@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 import datetime
 
 class UserCreate(BaseModel):
@@ -30,3 +30,10 @@ class SolveRequest(BaseModel):
     where 0 represents an empty cell.
     """
     grid: List[List[int]]
+
+
+class SolveResponse(BaseModel):
+    """Solved grid payload consumed by the web UI."""
+
+    grid: List[List[int]]
+    cell_colors: List[List[str]]

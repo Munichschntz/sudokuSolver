@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models import User, GameState
-from schemas import UserCreate, UserOut, GameStateCreate, GameStateOut
+from schemas import UserCreate, GameStateCreate
 import bcrypt
 from typing import Optional, List
 
