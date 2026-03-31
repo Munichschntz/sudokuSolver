@@ -1,0 +1,12 @@
+{
+  "file": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\crud.py",
+  "timestamp": "2026-01-07T01-25-27-567Z",
+  "prompt": "Add Tailwind for styling to our webapp. Add the abilty to create user accounts that are able to save sudok grids that have been solved, as well as the starting state of the entered puzzle (we should also account for this in our solving so that we can save the game state properly. And some way to let the program know that the entered state is complete and ready to solve, while also stored that value.)",
+  "originalContent": null,
+  "generatedCode": "from sqlalchemy.orm import Session\nfrom models import User, GameState\nfrom schemas import UserCreate, UserOut, GameStateCreate, GameStateOut\nimport bcrypt\nfrom typing import Optional, List\n\ndef get_user_by_username(db: Session, username: str) -> Optional[User]:\n    return db.query(User).filter(User.username == username).first()\n\ndef create_user(db: Session, user_in: UserCreate) -> User:\n    hashed = bcrypt.hashpw(user_in.password.encode(), bcrypt.gensalt())\n    db_user = User(username=user_in.username, hashed_password=hashed.decode())\n    db.add(db_user)\n    db.commit()\n    db.refresh(db_user)\n    return db_user\n\ndef get_user(db: Session, user_id: int) -> Optional[User]:\n    return db.query(User).filter(User.id == user_id).first()\n\ndef verify_password(user: User, password: str) -> bool:\n    return bcrypt.checkpw(password.encode(), user.hashed_password.encode())\n\ndef create_game_state(db: Session, user_id: int, game_in: GameStateCreate) -> GameState:\n    db_state = GameState(\n        user_id=user_id,\n        grid=game_in.grid,\n        cell_colors=game_in.cell_colors,\n        solved=game_in.solved\n    )\n    db.add(db_state)\n    db.commit()\n    db.refresh(db_state)\n    return db_state\n\ndef get_game_states(db: Session, user_id: int) -> List[GameState]:\n    return db.query(GameState).filter(GameState.user_id == user_id).order_by(GameState.timestamp.desc()).all()\n\ndef get_game_state(db: Session, state_id: int) -> Optional[GameState]:\n    return db.query(GameState).filter(GameState.id == state_id).first()",
+  "metadata": {
+    "fileExisted": false,
+    "filePath": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\crud.py",
+    "logPath": "ignorelogs\\2026-01-07T01-25-27-567Z_crud.json"
+  }
+}

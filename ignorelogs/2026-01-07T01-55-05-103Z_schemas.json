@@ -1,0 +1,12 @@
+{
+  "file": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\schemas.py",
+  "timestamp": "2026-01-07T01-55-05-103Z",
+  "prompt": "Expand upon the features for our sudoku solver webapp.",
+  "originalContent": null,
+  "generatedCode": "from pydantic import BaseModel, Field\nfrom typing import List, Optional\nimport datetime\n\nclass UserCreate(BaseModel):\n    username: str = Field(..., min_length=3)\n    password: str = Field(..., min_length=6)\n\nclass UserOut(BaseModel):\n    id: int\n    username: str\n\nclass GameStateBase(BaseModel):\n    grid: List[List[int]]\n    cell_colors: List[List[str]]\n    solved: bool\n\nclass GameStateCreate(GameStateBase):\n    pass\n\nclass GameStateOut(GameStateBase):\n    id: int\n    timestamp: datetime.datetime\n\n# New schema for solving request\nclass SolveRequest(BaseModel):\n    \"\"\"\n    Request payload containing a Sudoku puzzle grid.\n    The grid must be a 9x9 list of lists with integers from 0-9,\n    where 0 represents an empty cell.\n    \"\"\"\n    grid: List[List[int]]",
+  "metadata": {
+    "fileExisted": false,
+    "filePath": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\schemas.py",
+    "logPath": "ignorelogs\\2026-01-07T01-55-05-103Z_schemas.json"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "file": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\models.py",
+  "timestamp": "2026-01-07T01-25-27-563Z",
+  "prompt": "Add Tailwind for styling to our webapp. Add the abilty to create user accounts that are able to save sudok grids that have been solved, as well as the starting state of the entered puzzle (we should also account for this in our solving so that we can save the game state properly. And some way to let the program know that the entered state is complete and ready to solve, while also stored that value.)",
+  "originalContent": null,
+  "generatedCode": "from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON\nfrom sqlalchemy.orm import declarative_base, relationship\nimport datetime\n\nBase = declarative_base()\n\nclass User(Base):\n    __tablename__ = 'users'\n    id = Column(Integer, primary_key=True)\n    username = Column(String(50), unique=True, nullable=False)\n    hashed_password = Column(String(128), nullable=False)\n\n    games = relationship('GameState', back_populates='user')\n\nclass GameState(Base):\n    __tablename__ = 'game_states'\n    id = Column(Integer, primary_key=True)\n    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)\n    grid = Column(JSON, nullable=False)\n    cell_colors = Column(JSON, nullable=False)\n    timestamp = Column(DateTime, default=datetime.datetime.utcnow)\n    solved = Column(Boolean, default=False)\n\n    user = relationship('User', back_populates='games')",
+  "metadata": {
+    "fileExisted": false,
+    "filePath": "C:\\Users\\mgilley\\AppData\\Local\\Programs\\Microsoft VS Code\\models.py",
+    "logPath": "ignorelogs\\2026-01-07T01-25-27-563Z_models.json"
+  }
+}
