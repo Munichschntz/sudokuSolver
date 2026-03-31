@@ -32,6 +32,8 @@
           <input type="checkbox" id="paper-mode" />
           <span id="paper-mode-label"></span>
         </label>
+        <label for="appearance-preset" id="appearance-preset-label"></label>
+        <select id="appearance-preset"></select>
       </div>
     </section>
 
@@ -58,9 +60,11 @@
     const wrapNavEl = document.getElementById("wrap-nav");
     const compactModeEl = document.getElementById("compact-mode");
     const paperModeEl = document.getElementById("paper-mode");
+    const appearancePresetEl = document.getElementById("appearance-preset");
     const WRAP_STORAGE_KEY = "sudoku.wrapNavigation";
     const COMPACT_STORAGE_KEY = "sudoku.compactMode";
     const PAPER_STORAGE_KEY = "sudoku.paperMode";
+    const APPEARANCE_PRESET_STORAGE_KEY = "sudoku.appearancePreset";
 
     function readWrapPreference() {
       try {
@@ -100,6 +104,62 @@
       } catch (_error) {
         // Ignore storage errors (private mode or disabled storage).
       }
+    }
+
+    function readAppearancePreset() {
+      try {
+        const saved = window.localStorage.getItem(APPEARANCE_PRESET_STORAGE_KEY);
+        if (!saved) {
+          return null;
+        }
+        if (["default", "compact", "paper", "compact-paper"].includes(saved)) {
+          return saved;
+        }
+        return null;
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function persistAppearancePreset(value) {
+      try {
+        window.localStorage.setItem(APPEARANCE_PRESET_STORAGE_KEY, value);
+      } catch (_error) {
+        // Ignore storage errors (private mode or disabled storage).
+      }
+    }
+
+    function presetFromToggles() {
+      if (compactModeEl.checked && paperModeEl.checked) {
+        return "compact-paper";
+      }
+      if (compactModeEl.checked) {
+        return "compact";
+      }
+      if (paperModeEl.checked) {
+        return "paper";
+      }
+      return "default";
+    }
+
+    function syncPresetFromToggles() {
+      const preset = presetFromToggles();
+      appearancePresetEl.value = preset;
+      persistAppearancePreset(preset);
+    }
+
+    function applyAppearancePreset(preset, persist = true) {
+      compactModeEl.checked = preset === "compact" || preset === "compact-paper";
+      paperModeEl.checked = preset === "paper" || preset === "compact-paper";
+      applyAppearanceModes();
+
+      if (persist) {
+        persistBoolPreference(COMPACT_STORAGE_KEY, compactModeEl.checked);
+        persistBoolPreference(PAPER_STORAGE_KEY, paperModeEl.checked);
+        persistAppearancePreset(preset);
+      }
+
+      appearancePresetEl.value = preset;
     }
 
     function applyAppearanceModes() {
@@ -161,12 +221,33 @@
       document.getElementById("wrap-nav-label").textContent = config.labels.wrap_navigation;
       document.getElementById("compact-mode-label").textContent = "Compact layout";
       document.getElementById("paper-mode-label").textContent = "Soft paper theme";
+      document.getElementById("appearance-preset-label").textContent = "Appearance preset";
       const defaultWrap = Boolean(config.options && config.options.wrap_navigation_default);
       const savedWrap = readWrapPreference();
       wrapNavEl.checked = savedWrap === null ? defaultWrap : savedWrap;
-      compactModeEl.checked = readBoolPreference(COMPACT_STORAGE_KEY, false);
-      paperModeEl.checked = readBoolPreference(PAPER_STORAGE_KEY, false);
-      applyAppearanceModes();
+      appearancePresetEl.innerHTML = "";
+
+      [
+        { value: "default", label: "Default" },
+        { value: "compact", label: "Compact" },
+        { value: "paper", label: "Soft paper" },
+        { value: "compact-paper", label: "Compact + soft paper" },
+      ].forEach(({ value, label }) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        appearancePresetEl.appendChild(option);
+      });
+
+      const savedPreset = readAppearancePreset();
+      if (savedPreset) {
+        applyAppearancePreset(savedPreset, false);
+      } else {
+        compactModeEl.checked = readBoolPreference(COMPACT_STORAGE_KEY, false);
+        paperModeEl.checked = readBoolPreference(PAPER_STORAGE_KEY, false);
+        applyAppearanceModes();
+        syncPresetFromToggles();
+      }
 
       config.difficulty_options.forEach((name) => {
         const option = document.createElement("option");
@@ -383,10 +464,15 @@
       compactModeEl.addEventListener("change", () => {
         persistBoolPreference(COMPACT_STORAGE_KEY, compactModeEl.checked);
         applyAppearanceModes();
+        syncPresetFromToggles();
       });
       paperModeEl.addEventListener("change", () => {
         persistBoolPreference(PAPER_STORAGE_KEY, paperModeEl.checked);
         applyAppearanceModes();
+        syncPresetFromToggles();
+      });
+      appearancePresetEl.addEventListener("change", () => {
+        applyAppearancePreset(appearancePresetEl.value);
       });
     }
 
