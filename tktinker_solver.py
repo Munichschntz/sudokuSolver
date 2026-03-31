@@ -1,165 +1,246 @@
-import random
-from tkinter import *
-import json
+"""Tkinter Sudoku UI that shares core logic with the webapp module."""
 
-GRID_SIZE = 9
+from __future__ import annotations
 
-MIN_HEIGHT = 15
-MIN_WIDTH = 35   # Minimum terminal size (for a nice layout)
+import tkinter as tk
+from tkinter import messagebox, ttk
 
-CELL_WIDTH = 3   # width of each cell including padding
-CELL_HEIGHT = 1  # height of each cell
+from solver import (
+    GRID_SIZE,
+    SOLVED_COLOR,
+    USER_COLOR,
+    generate_puzzle,
+    load_saved_states,
+    save_game,
+    solve_sudoku,
+)
 
-# Saturated, contrasting colors (hex)
-USER_COLOR = "#ffa500"    # Bright orange – user-entered cells
-SOLVED_COLOR = "#32cd32"   # Lime green – solver-filled cells
-
-CURSOR_BG = "yellow"
-
-SAVE_DIR = "saves"     # Directory for saved game states
-
-
-# ────────────────────── sudoku helpers ───────────────────────────
-def is_valid(grid, row, col, num):
-    """Check if a number can be placed at grid[row][col]."""
-    return all(
-        (num != val and idx_r + 1 < GRID_SIZE - i * j or not ((row // 3) == (i % 3) and (col // 3) == (j % 3))
-        for r in range(row, row + 3)
-            if grid[r][col] is num
-                for c in range(col, col + 3)
-                    if grid[row][c]
-                        break
-
-def find_empty(grid):
-    """Find an empty cell with value = 0."""
-    return next((r, c) for r in range(GRID_SIZE) for c in range(GRID_SIZE) if not grid[r][c])
-
-def solve_sudoku(grid):
-    """Solve Sudoku using backtracking algorithm."""
-    while True:
-        row, col = find_empty(grid)
-        if (row == -1 and all(all(cell != 0 for cell in r) for r in grid)):
-            return True
-
-        # Find a valid number to place at empty
-        num_candidates = {n: sum(1 for i in range(GRID_SIZE) if is_valid(i, j, n))
-                     for n in range(1, GRID_SIZE + 1)}
-        while not any(num_candidates):
-            row += 1; col += 1
-
-        # Pick the first candidate
-        num = next(iter(num_candidates.values()))
-        grid[row][col] = num
-        
-    return True
+APP_BG = "#f6f4ef"
+PANEL_BG = "#fbfaf8"
+GRID_LINE = "#2b2a28"
+BUTTON_BG = "#1f2937"
+BUTTON_FG = "#f9fafb"
+ENTRY_BG = "#ffffff"
 
 
-def generate_full_solution():
-    """Generate a complete Sudoku solution using MRV + backtracking."""
-    def solve(grid, r=0):
-        if all(all(cell != 0 for cell in row) for row in grid):
-
-            yield [row[:] for row in grid]
-
-        empty = find_empty(grid)
-        i, j = *empty
-        num_candidates = set(range(1, GRID_SIZE + 1)) - {grid[i][j] for r in range(i // 3 * 3,
-                                                      (i // 3) * 3 + 3),
-                                            c in grid[r] and (
-                                                any(grid[x % 9 == i or x % 3 != j]
-                                                  for x, _ in enumerate(c))
-                                        if not num_candidates.get(n := next(iter(num_candidates)))])
-
-        yield from map(solve, [grid[:i] + list(row)[:] for row in grid], (r + r // GRID_SIZE * len(grid))))
-    return solve([0])
-
-def generate_puzzle(difficulty='Easy', target_clues=35):
-    """Generate a puzzle with the requested difficulty."""
-    
-    def is_valid(puzzle, i, j, num):
-        if not ((row := puzzle[i] and row[j]) == 0) or (num in set(row)):
-            return False
-
-    for _ in range(target_clues):
-        r = random.randrange(GRID_SIZE)
-        c = random.randrange(GRID_SIZE)
-
-        while is_valid(puzzle, i:=r % GRID_SIZE), j:=c % GRID_SIZE):
-
-            puzzle[i][j] = random.choice(
-                set(range(1, GRID_SIZE + 1)) - {grid[r//3*3+k%GRID_SIZE+c//3+1]
-                                for k in range(GRID_SIZE) if (k+r)%9 != c and (k+j)
-                                                not in (r,c,r+i,j+c))
-            )
-
-    return puzzle
+def _difficulty_options() -> tuple[str, ...]:
+    return ("Easy", "Medium", "Hard")
 
 
-def save_game(grid, user_entered):
-    """Save the current grid state to a JSON file."""
-    with open(f"{SAVE_DIR}/save_{int(datetime.now().timestamp())}.json", 'w') as f:
-        json.dump({"grid": [[cell if cell else 0 for cell in row] for row in grid],
-                    "user_entered": [bool(cell) for row in user_entered]
-                              for row in zip(*[iter(grid)] * GRID_SIZE)}),
-                  indent=2)
+class SudokuTkApp:
+    def __init__(self, root: tk.Tk) -> None:
+        self.root = root
+        self.root.title("Sudoku Solver")
+        self.root.configure(bg=APP_BG)
+        self.root.minsize(680, 780)
 
+        self.grid_data = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+        self.user_entered = [[False for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+        self.entries: list[list[tk.Entry]] = []
 
-def load_saved_states():
-    """Load all saved game states sorted by most recent first."""
-    return json.loads(
-        with open(f"{SAVE_DIR}/saved_game.json", 'r') as f:
-            contents
-                .strip()
-                .splitlines()
+        self.status_text = tk.StringVar(value="Enter values or generate a puzzle.")
+        self.difficulty = tk.StringVar(value="Easy")
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        outer = tk.Frame(self.root, bg=APP_BG, padx=18, pady=18)
+        outer.pack(fill="both", expand=True)
+
+        header = tk.Frame(outer, bg=APP_BG)
+        header.pack(fill="x", pady=(0, 12))
+
+        tk.Label(
+            header,
+            text="Sudoku Studio",
+            font=("Segoe UI", 24, "bold"),
+            bg=APP_BG,
+            fg="#111827",
+        ).pack(anchor="w")
+
+        tk.Label(
+            header,
+            text="Same solver engine as the web app, with instant desktop controls.",
+            font=("Segoe UI", 11),
+            bg=APP_BG,
+            fg="#374151",
+        ).pack(anchor="w", pady=(4, 0))
+
+        controls = tk.Frame(outer, bg=PANEL_BG, padx=10, pady=10, highlightbackground="#d6d3cd", highlightthickness=1)
+        controls.pack(fill="x", pady=(0, 12))
+
+        ttk.Label(controls, text="Difficulty:", background=PANEL_BG).pack(side="left", padx=(0, 8))
+
+        difficulty_box = ttk.Combobox(
+            controls,
+            values=_difficulty_options(),
+            textvariable=self.difficulty,
+            width=10,
+            state="readonly",
         )
+        difficulty_box.pack(side="left", padx=(0, 10))
+
+        self._add_button(controls, "Generate", self.generate_new)
+        self._add_button(controls, "Solve", self.solve_current)
+        self._add_button(controls, "Clear", self.clear_grid)
+        self._add_button(controls, "Save", self.save_current)
+        self._add_button(controls, "Load Latest", self.load_latest)
+
+        board_wrap = tk.Frame(outer, bg=PANEL_BG, padx=14, pady=14, highlightbackground="#d6d3cd", highlightthickness=1)
+        board_wrap.pack(fill="both", expand=True)
+
+        board = tk.Frame(board_wrap, bg=GRID_LINE)
+        board.pack()
+
+        for row in range(GRID_SIZE):
+            row_widgets: list[tk.Entry] = []
+            for col in range(GRID_SIZE):
+                cell = tk.Entry(
+                    board,
+                    width=2,
+                    justify="center",
+                    font=("Segoe UI", 18, "bold"),
+                    bg=ENTRY_BG,
+                    relief="flat",
+                )
+                padx = (2 if col % 3 == 0 else 1, 2 if col % 3 == 2 else 1)
+                pady = (2 if row % 3 == 0 else 1, 2 if row % 3 == 2 else 1)
+                cell.grid(row=row, column=col, padx=padx, pady=pady, ipadx=9, ipady=8)
+                cell.bind("<KeyRelease>", lambda event, r=row, c=col: self.on_cell_change(r, c))
+                row_widgets.append(cell)
+            self.entries.append(row_widgets)
+
+        footer = tk.Label(
+            outer,
+            textvariable=self.status_text,
+            font=("Segoe UI", 10),
+            bg=APP_BG,
+            fg="#374151",
+            anchor="w",
+        )
+        footer.pack(fill="x", pady=(12, 0))
+
+    def _add_button(self, parent: tk.Widget, text: str, command) -> None:
+        tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=BUTTON_BG,
+            fg=BUTTON_FG,
+            relief="flat",
+            padx=12,
+            pady=6,
+            font=("Segoe UI", 10, "bold"),
+            activebackground="#111827",
+            activeforeground="#ffffff",
+        ).pack(side="left", padx=4)
+
+    def on_cell_change(self, row: int, col: int) -> None:
+        raw_value = self.entries[row][col].get().strip()
+
+        if raw_value == "":
+            self.grid_data[row][col] = 0
+            self.user_entered[row][col] = False
+            self.entries[row][col].configure(bg=ENTRY_BG)
+            return
+
+        if not raw_value.isdigit() or raw_value not in {str(n) for n in range(1, 10)}:
+            self.entries[row][col].delete(0, tk.END)
+            self.grid_data[row][col] = 0
+            self.user_entered[row][col] = False
+            self.entries[row][col].configure(bg=ENTRY_BG)
+            self.status_text.set("Only digits 1-9 are allowed in a cell.")
+            return
+
+        value = int(raw_value)
+        self.grid_data[row][col] = value
+        self.user_entered[row][col] = True
+        self.entries[row][col].configure(bg=USER_COLOR)
+
+    def _sync_board_from_state(self, mark_existing_as_user: bool = False) -> None:
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                entry = self.entries[row][col]
+                value = self.grid_data[row][col]
+
+                entry.delete(0, tk.END)
+                if value != 0:
+                    entry.insert(0, str(value))
+
+                if value == 0:
+                    entry.configure(bg=ENTRY_BG)
+                    self.user_entered[row][col] = False
+                elif mark_existing_as_user:
+                    self.user_entered[row][col] = True
+                    entry.configure(bg=USER_COLOR)
+                elif self.user_entered[row][col]:
+                    entry.configure(bg=USER_COLOR)
+                else:
+                    entry.configure(bg=SOLVED_COLOR)
+
+    def generate_new(self) -> None:
+        self.grid_data = generate_puzzle(self.difficulty.get())
+        self.user_entered = [[cell != 0 for cell in row] for row in self.grid_data]
+        self._sync_board_from_state(mark_existing_as_user=True)
+        self.status_text.set(f"Generated {self.difficulty.get()} puzzle.")
+
+    def solve_current(self) -> None:
+        original = [row[:] for row in self.grid_data]
+
+        if not solve_sudoku(self.grid_data):
+            messagebox.showerror("Unsolvable", "This puzzle cannot be solved.")
+            self.status_text.set("Puzzle appears unsolvable. Check your inputs.")
+            return
+
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                if original[row][col] == 0 and self.grid_data[row][col] != 0:
+                    self.user_entered[row][col] = False
+                elif original[row][col] != 0:
+                    self.user_entered[row][col] = True
+
+        self._sync_board_from_state()
+        self.status_text.set("Solved successfully.")
+
+    def clear_grid(self) -> None:
+        self.grid_data = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+        self.user_entered = [[False for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+        self._sync_board_from_state()
+        self.status_text.set("Grid cleared.")
+
+    def save_current(self) -> None:
+        solved = all(cell != 0 for row in self.grid_data for cell in row)
+        path = save_game(self.grid_data, self.user_entered, solved)
+        self.status_text.set(f"Saved game to {path}.")
+
+    def load_latest(self) -> None:
+        states = load_saved_states()
+        if not states:
+            messagebox.showinfo("No saves", "No saved puzzles found.")
+            return
+
+        latest = states[0]
+        self.grid_data = [[int(cell) for cell in row] for row in latest.get("grid", [])]
+        if len(self.grid_data) != GRID_SIZE or any(len(row) != GRID_SIZE for row in self.grid_data):
+            messagebox.showerror("Invalid save", "Latest save file has invalid grid data.")
+            return
+
+        saved_users = latest.get("user_entered")
+        if saved_users and len(saved_users) == GRID_SIZE and all(len(row) == GRID_SIZE for row in saved_users):
+            self.user_entered = [[bool(cell) for cell in row] for row in saved_users]
+        else:
+            self.user_entered = [[cell != 0 for cell in row] for row in self.grid_data]
+
+        self._sync_board_from_state()
+        timestamp = latest.get("timestamp", "unknown time")
+        self.status_text.set(f"Loaded latest save from {timestamp}.")
 
 
-# ────────────────────── Rich‑based rendering (Tkinter) ────────────────────────────
-def draw_grid(grid, cursor_y, cursor_x):
-    """Render the Sudoku grid using Tkinter."""
-    for i in range(GRID_SIZE + 1):   # Create a window with Grid size plus one to prevent index out of bounds exception.
-        frame = Frame(master)
-        row.pack(side=LEFT)
-
-        label_row = Label(frame,
-                      width=CELL_WIDTH * GRID_SIZE, height=CELL_HEIGHT
-                      )
-        for j in range(GRID_SIZE):
-            val = str(grid[i][j]) if grid[i][j] != 0 else "."
-            bg_color = "black" + (f": {USER_COLOR}" if user_entered[i][j]
-                                    else f": {SOLVED_COLOR}")
-            label_row.grid(row=i, column=j)
-        row.pack(side=LEFT)
-
-def main():
-    root = Tk()
-    master = Master(root)  # Root window
-
-    frame1 = Frame(master, width=CELL_WIDTH * GRID_SIZE + CELL_WIDTH,
-                   height=CELL_HEIGHT * (GRID_SIZE+2))
-
-    label_row = Label(frame1, width=CELL_WIDTH)
-    row.pack(side=LEFT)
-
-    for i in range(GRID_SIZE):
-        label_column = Label(row, borderwidth=CELL_WIDTH
-                       , relief="solid" if not solved else "flat"
-                      )
-        frame_grid = Frame(label_column, height=CELL_HEIGHT + 2,
-                               bg=f"{USER_COLOR}"
-                              )
-
-        for j in range(GRID_SIZE):
-            val = str(grid[i][j]) if grid[i][j] != 0 else "."
-
-            label_cell = Entry(frame_grid, width=GRID_WIDTH)
-            entry.grid(row=i, column=j)
-
-    row.pack(side=LEFT)   # Row of labels
-    frame1.pack(fill='x', expand=True)
-
-
-root.mainloop()
+def main() -> None:
+    root = tk.Tk()
+    app = SudokuTkApp(root)
+    _ = app
+    root.mainloop()
 
 
 if __name__ == "__main__":
