@@ -1,9 +1,11 @@
 from pathlib import Path
+import logging
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from typing import List
 from sqlalchemy import create_engine
@@ -32,6 +34,22 @@ app = FastAPI(title="Sudoku Solver Web App")
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "webapp" / "templates"))
+app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "webapp" / "static")), name="static")
+
+logger = logging.getLogger("sudoku.app")
+logger.setLevel(logging.INFO)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log request status and full stack traces for unhandled errors."""
+    try:
+        response = await call_next(request)
+        logger.info("%s %s -> %s", request.method, request.url.path, response.status_code)
+        return response
+    except Exception:
+        logger.exception("Unhandled error while processing %s %s", request.method, request.url.path)
+        raise
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
