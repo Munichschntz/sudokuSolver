@@ -203,6 +203,27 @@
     const statusEl = document.getElementById("status");
     const difficultyEl = document.getElementById("difficulty");
 
+    function getCell(row, col) {
+      if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+        return null;
+      }
+      return boardEl.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    }
+
+    function moveFocus(row, col) {
+      const target = getCell(row, col);
+      if (target) {
+        target.focus();
+        target.select();
+      }
+    }
+
+    function updateCellState(row, col, value, markUser = false) {
+      state.grid[row][col] = value;
+      state.userEntered[row][col] = markUser && value !== 0;
+      state.cellColors[row][col] = value === 0 ? "" : (markUser ? config.theme.user_cell : state.cellColors[row][col]);
+    }
+
     function setStatus(text) {
       statusEl.textContent = text;
     }
@@ -253,6 +274,8 @@
           }
 
           input.addEventListener("input", onCellInput);
+          input.addEventListener("keydown", onCellKeyDown);
+          input.addEventListener("focus", () => input.select());
           boardEl.appendChild(input);
         }
       }
@@ -267,27 +290,79 @@
       const value = input.value.trim();
 
       if (value === "") {
-        state.grid[row][col] = 0;
-        state.userEntered[row][col] = false;
-        state.cellColors[row][col] = "";
+        updateCellState(row, col, 0, false);
         syncBoardFromState();
         return;
       }
 
       if (!/^[1-9]$/.test(value)) {
         input.value = "";
-        state.grid[row][col] = 0;
-        state.userEntered[row][col] = false;
-        state.cellColors[row][col] = "";
+        updateCellState(row, col, 0, false);
         setStatus(config.labels.invalid_input);
         syncBoardFromState();
         return;
       }
 
-      state.grid[row][col] = Number(value);
-      state.userEntered[row][col] = true;
-      state.cellColors[row][col] = config.theme.user_cell;
+      updateCellState(row, col, Number(value), true);
       syncBoardFromState();
+    }
+
+    function onCellKeyDown(event) {
+      const input = event.target;
+      const row = Number(input.dataset.row);
+      const col = Number(input.dataset.col);
+      const key = event.key;
+
+      if (key === "ArrowUp") {
+        event.preventDefault();
+        moveFocus(row - 1, col);
+        return;
+      }
+      if (key === "ArrowDown") {
+        event.preventDefault();
+        moveFocus(row + 1, col);
+        return;
+      }
+      if (key === "ArrowLeft") {
+        event.preventDefault();
+        moveFocus(row, col - 1);
+        return;
+      }
+      if (key === "ArrowRight") {
+        event.preventDefault();
+        moveFocus(row, col + 1);
+        return;
+      }
+
+      if (key === "Enter") {
+        event.preventDefault();
+        moveFocus(event.shiftKey ? row - 1 : row + 1, col);
+        return;
+      }
+
+      if (key === "Backspace" || key === "Delete") {
+        event.preventDefault();
+        updateCellState(row, col, 0, false);
+        syncBoardFromState();
+        if (key === "Backspace") {
+          moveFocus(row, col - 1);
+        }
+        return;
+      }
+
+      if (/^[1-9]$/.test(key)) {
+        event.preventDefault();
+        updateCellState(row, col, Number(key), true);
+        syncBoardFromState();
+        moveFocus(row, col + 1);
+        return;
+      }
+
+      if (key === "0" || key === ".") {
+        event.preventDefault();
+        updateCellState(row, col, 0, false);
+        syncBoardFromState();
+      }
     }
 
     function syncBoardFromState() {
