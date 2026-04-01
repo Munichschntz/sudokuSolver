@@ -35,6 +35,16 @@ python tkinter_gui.py
 - saves/: saved game states
 - run_windows.bat: Windows launcher that creates or activates `venv`
 
+## Screenshots
+
+### Main Window
+
+![Main Window](docs/images/app-main-window.png)
+
+### Solved Board
+
+![Solved Board](docs/images/app-solved-board.png)
+
 ## Notes
 
 - Saved games are stored as JSON files in `saves/`.
