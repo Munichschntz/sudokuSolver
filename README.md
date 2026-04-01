@@ -45,6 +45,10 @@ python tkinter_gui.py
 
 ![Solved Board](docs/images/app-solved-board.png)
 
+### Save and Load
+
+![Save and Load](docs/images/app-load-save.png)
+
 ## Notes
 
 - Saved games are stored as JSON files in `saves/`.
